@@ -1,90 +1,59 @@
-use crate::STATE;
-use std::mem;
-use std::slice;
+// Since execution is single threaded
+use once_cell::unsync::OnceCell;
 
-extern "C" {
-	fn return_result(result_pointer: *const u8, result_size: i32, ident: i32);
-	fn return_error(code: i32, result_pointer: *const u8, result_size: i32, ident: i32);
+use crate::errors::runnable_unset;
+use crate::errors::RunErr;
+use crate::sys::env;
+
+pub fn return_error(err: RunErr) {
+	let RunErr { code, message } = err;
+	env::return_error(code, message.as_ptr(), message.len() as i32)
 }
 
-pub struct RunErr {
-	pub code: i32,
-	pub message: String,
+pub fn return_result(result_data: Vec<u8>) {
+	env::return_result(result_data.as_ptr(), result_data.len() as i32)
 }
-
-impl RunErr {
-	pub fn new(code: i32, msg: &str) -> Self {
-		RunErr {
-			code,
-			message: msg.into(),
-		}
-	}
-}
-
-pub struct HostErr {
-	pub message: String,
-}
-
-impl HostErr {
-	pub fn new(msg: &str) -> Self {
-		HostErr {
-			message: String::from(msg),
-		}
-	}
-}
-
 pub trait Runnable {
 	fn run(&self, input: Vec<u8>) -> Result<Vec<u8>, RunErr>;
+}
+pub(crate) fn execute(input: Vec<u8>) {
+	unsafe {
+		STATE
+      .get()
+			.map_or_else(||Err(runnable_unset()), |state| state.runnable.run(input))
+			.map_or_else(return_error, return_result)
+	}
 }
 
 pub fn use_runnable(runnable: &'static dyn Runnable) {
 	unsafe {
-		STATE.runnable = Some(runnable);
-	}
-}
-
-/// # Safety
-///
-/// We hand over the the pointer to the allocated memory.
-/// Caller has to ensure that the memory gets freed again.
-#[no_mangle]
-pub unsafe extern "C" fn allocate(size: i32) -> *const u8 {
-	let mut buffer = Vec::with_capacity(size as usize);
-
-	let pointer = buffer.as_mut_ptr();
-
-	mem::forget(buffer);
-
-	pointer as *const u8
-}
-
-/// # Safety
-#[no_mangle]
-pub unsafe extern "C" fn deallocate(pointer: *const u8, size: i32) {
-	let _ = slice::from_raw_parts(pointer, size as usize);
-}
-
-/// # Safety
-#[no_mangle]
-pub unsafe extern "C" fn run_e(pointer: *mut u8, size: i32, ident: i32) {
-	STATE.ident = ident;
-
-	// rebuild the memory into something usable
-	let in_bytes = Vec::from_raw_parts(pointer, size as usize, size as usize);
-
-	match execute_runnable(STATE.runnable, in_bytes) {
-		Ok(data) => {
-			return_result(data.as_ptr(), data.len() as i32, ident);
-		}
-		Err(RunErr { code, message }) => {
-			return_error(code, message.as_ptr(), message.len() as i32, ident);
+		if STATE.set(State{ runnable, ident: 0}).is_err() {
+			return_error(RunErr::new(0, &"Can only set runable once"))
 		}
 	}
 }
 
-fn execute_runnable(runnable: Option<&dyn Runnable>, data: Vec<u8>) -> Result<Vec<u8>, RunErr> {
-	if let Some(runnable) = runnable {
-		return runnable.run(data);
+/// This file represents the Rust "API" for Reactr Wasm runnables. The functions defined herein are used to exchange
+/// data between the host (Reactr, written in Go) and the Runnable (a Wasm module, in this case written in Rust).
+
+/// State struct to hold our dynamic Runnable
+pub(crate) struct State<'a> {
+	ident: i32,
+	runnable: &'a dyn Runnable,
+}
+
+/// The state that holds the user-provided Runnable and the current ident
+static mut STATE: OnceCell<State> = OnceCell::new();
+
+pub(crate) fn current_ident() -> i32 {
+	unsafe { STATE.get().unwrap().ident }
+}
+
+pub(crate) fn set_ident(i: i32) {
+	unsafe {
+		STATE.get_mut().map_or_else(|| {
+      return_error(runnable_unset());
+    }
+    , |state| state.ident = i)
 	}
-	Err(RunErr::new(-1, "No runnable set"))
 }

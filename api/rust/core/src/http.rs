@@ -1,36 +1,23 @@
+use std::collections::BTreeMap;
 pub mod method;
 
-use std::collections::BTreeMap;
-
-use crate::ffi;
-use crate::runnable::HostErr;
-use crate::STATE;
+use crate::{ffi, errors::HostResult, env};
 use method::Method;
 
-extern "C" {
-	fn fetch_url(
-		method: i32,
-		url_pointer: *const u8,
-		url_size: i32,
-		body_pointer: *const u8,
-		body_size: i32,
-		ident: i32,
-	) -> i32;
-}
 
-pub fn get(url: &str, headers: Option<BTreeMap<&str, &str>>) -> Result<Vec<u8>, HostErr> {
+pub fn get(url: &str, headers: Option<BTreeMap<&str, &str>>) -> HostResult<Vec<u8>> {
 	do_request(Method::GET.into(), url, None, headers)
 }
 
-pub fn post(url: &str, body: Option<Vec<u8>>, headers: Option<BTreeMap<&str, &str>>) -> Result<Vec<u8>, HostErr> {
+pub fn post(url: &str, body: Option<Vec<u8>>, headers: Option<BTreeMap<&str, &str>>) -> HostResult<Vec<u8>> {
 	do_request(Method::POST.into(), url, body, headers)
 }
 
-pub fn patch(url: &str, body: Option<Vec<u8>>, headers: Option<BTreeMap<&str, &str>>) -> Result<Vec<u8>, HostErr> {
+pub fn patch(url: &str, body: Option<Vec<u8>>, headers: Option<BTreeMap<&str, &str>>) -> HostResult<Vec<u8>> {
 	do_request(Method::PATCH.into(), url, body, headers)
 }
 
-pub fn delete(url: &str, headers: Option<BTreeMap<&str, &str>>) -> Result<Vec<u8>, HostErr> {
+pub fn delete(url: &str, headers: Option<BTreeMap<&str, &str>>) -> HostResult<Vec<u8>> {
 	do_request(Method::DELETE.into(), url, None, headers)
 }
 
@@ -45,7 +32,7 @@ fn do_request(
 	url: &str,
 	body: Option<Vec<u8>>,
 	headers: Option<BTreeMap<&str, &str>>,
-) -> Result<Vec<u8>, HostErr> {
+) -> HostResult<Vec<u8>> {
 	let header_string = render_header_string(headers);
 
 	let url_string = match header_string {
@@ -65,16 +52,13 @@ fn do_request(
 		None => body_pointer = std::ptr::null::<u8>(),
 	}
 
-	let result_size = unsafe {
-		fetch_url(
+	let result_size = env::fetch_url(
 			method,
 			url_string.as_str().as_ptr(),
 			url_string.len() as i32,
 			body_pointer,
 			body_size,
-			STATE.ident,
-		)
-	};
+		);
 
 	ffi::result(result_size)
 }
