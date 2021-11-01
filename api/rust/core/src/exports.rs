@@ -21,7 +21,6 @@ pub unsafe extern "C" fn deallocate(pointer: *const u8, size: i32) {
 	let _ = slice::from_raw_parts(pointer, size as usize);
 }
 
-
 /// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn run_e(pointer: *mut u8, size: i32, ident: i32) {
@@ -29,5 +28,5 @@ pub unsafe extern "C" fn run_e(pointer: *mut u8, size: i32, ident: i32) {
 
 	// rebuild the memory into something usable
 	let in_bytes = Vec::from_raw_parts(pointer, size as usize, size as usize);
-  crate::runnable::execute(in_bytes);
+	crate::runnable::execute(in_bytes);
 }

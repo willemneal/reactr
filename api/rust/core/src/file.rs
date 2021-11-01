@@ -1,4 +1,4 @@
-use crate::{ffi, env};
+use crate::{env, ffi};
 
 /// Executes the request via FFI
 ///

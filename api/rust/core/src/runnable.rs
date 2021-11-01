@@ -19,15 +19,15 @@ pub trait Runnable {
 pub(crate) fn execute(input: Vec<u8>) {
 	unsafe {
 		STATE
-      .get()
-			.map_or_else(||Err(runnable_unset()), |state| state.runnable.run(input))
+			.get()
+			.map_or_else(|| Err(runnable_unset()), |state| state.runnable.run(input))
 			.map_or_else(return_error, return_result)
 	}
 }
 
 pub fn use_runnable(runnable: &'static dyn Runnable) {
 	unsafe {
-		if STATE.set(State{ runnable, ident: 0}).is_err() {
+		if STATE.set(State { runnable, ident: 0 }).is_err() {
 			return_error(RunErr::new(0, &"Can only set runable once"))
 		}
 	}
@@ -51,9 +51,11 @@ pub(crate) fn current_ident() -> i32 {
 
 pub(crate) fn set_ident(i: i32) {
 	unsafe {
-		STATE.get_mut().map_or_else(|| {
-      return_error(runnable_unset());
-    }
-    , |state| state.ident = i)
+		STATE.get_mut().map_or_else(
+			|| {
+				return_error(runnable_unset());
+			},
+			|state| state.ident = i,
+		)
 	}
 }

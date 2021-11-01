@@ -6,7 +6,6 @@ use crate::sys;
 use crate::util;
 use field_type::FieldType;
 
-
 pub fn method() -> String {
 	get_field(FieldType::Meta.into(), "method").map_or("".into(), util::to_string)
 }
@@ -83,12 +82,12 @@ fn get_field(field_type: i32, key: &str) -> Option<Vec<u8>> {
 fn set_field(field_type: i32, key: &str, val: &str) -> HostResult<()> {
 	// make the request over FFI
 	let result_size = sys::env::request_set_field(
-			field_type,
-			key.as_ptr(),
-			key.len() as i32,
-			val.as_ptr(),
-			val.len() as i32,
-		);
+		field_type,
+		key.as_ptr(),
+		key.len() as i32,
+		val.as_ptr(),
+		val.len() as i32,
+	);
 
 	// retreive the result from the host and return it
 	match ffi::result(result_size) {

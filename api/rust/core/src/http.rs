@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
 pub mod method;
 
-use crate::{ffi, errors::HostResult, env};
+use crate::{env, errors::HostResult, ffi};
 use method::Method;
-
 
 pub fn get(url: &str, headers: Option<BTreeMap<&str, &str>>) -> HostResult<Vec<u8>> {
 	do_request(Method::GET.into(), url, None, headers)
@@ -53,12 +52,12 @@ fn do_request(
 	}
 
 	let result_size = env::fetch_url(
-			method,
-			url_string.as_str().as_ptr(),
-			url_string.len() as i32,
-			body_pointer,
-			body_size,
-		);
+		method,
+		url_string.as_str().as_ptr(),
+		url_string.len() as i32,
+		body_pointer,
+		body_size,
+	);
 
 	ffi::result(result_size)
 }

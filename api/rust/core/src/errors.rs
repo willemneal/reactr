@@ -1,4 +1,3 @@
-
 pub struct RunErr {
 	pub code: i32,
 	pub message: String,
@@ -24,7 +23,6 @@ impl HostErr {
 		}
 	}
 }
-
 
 pub fn runnable_unset() -> RunErr {
 	RunErr::new(-1, "No runnable set")
