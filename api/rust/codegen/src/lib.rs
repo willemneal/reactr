@@ -27,9 +27,10 @@ fn create_function_wrapper(func: &ForeignItem) -> proc_macro2::TokenStream {
 		ForeignItem::Fn(func) => {
 			let name = &func.sig.ident;
 			let mut params = func.sig.inputs.clone();
+			let attrs = proc_macro2::TokenStream::from_iter(func.attrs.iter().map(|attr| quote! {#attr}));
 			params.pop();
 			// // TODO: ensure error is returned
-			let ident = quote! {crate::current_ident()};
+			let ident = quote! {crate::runnable::current_ident()};
 			let mut args_vec: Vec<proc_macro2::TokenStream> = params
 				.iter()
 				.map(|p| match p {
@@ -43,10 +44,11 @@ fn create_function_wrapper(func: &ForeignItem) -> proc_macro2::TokenStream {
 			let return_val = &func.sig.output;
 			// Remove last arg
 			quote! {
-				pub fn #name (#params) #return_val {
-			unsafe { super::#name(#args) }
-				}
-			  }
+			#attrs
+					pub fn #name (#params) #return_val {
+				unsafe { super::#name(#args) }
+					}
+				  }
 		}
 		_ => quote! {},
 	}
