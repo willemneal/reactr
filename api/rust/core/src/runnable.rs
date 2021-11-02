@@ -1,9 +1,9 @@
 // Since execution is single threaded
 use once_cell::unsync::OnceCell;
 
+use crate::env;
 use crate::errors::runnable_unset;
 use crate::errors::RunErr;
-use crate::sys::env;
 
 pub fn return_error(err: RunErr) {
 	let RunErr { code, message } = err;

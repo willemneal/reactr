@@ -1,7 +1,8 @@
 use std::slice;
 
+use crate::db::query::QueryArg;
 use crate::errors::HostErr;
-use crate::util;
+use crate::{ffi, util};
 
 pub(crate) fn result(size: i32) -> Result<Vec<u8>, HostErr> {
 	let mut alloc_size = size;
@@ -38,4 +39,8 @@ pub(crate) fn result(size: i32) -> Result<Vec<u8>, HostErr> {
 
 pub(crate) fn add_var(name: &str, value: &str) {
 	crate::env::add_ffi_var(name.as_ptr(), name.len() as i32, value.as_ptr(), value.len() as i32);
+}
+
+pub(crate) fn add_vars(args: Vec<QueryArg>) {
+	args.iter().for_each(|arg| ffi::add_var(&arg.name, &arg.value));
 }

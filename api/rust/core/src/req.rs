@@ -1,9 +1,7 @@
 pub mod field_type;
 
 use crate::errors::HostResult;
-use crate::ffi;
-use crate::sys;
-use crate::util;
+use crate::{env, ffi, util};
 use field_type::FieldType;
 
 pub fn method() -> String {
@@ -74,14 +72,14 @@ pub fn state_raw(key: &str) -> Option<Vec<u8>> {
 ///
 /// Then retreives the result from the host and returns it
 fn get_field(field_type: i32, key: &str) -> Option<Vec<u8>> {
-	let result_size = sys::env::request_get_field(field_type, key.as_ptr(), key.len() as i32);
+	let result_size = env::request_get_field(field_type, key.as_ptr(), key.len() as i32);
 
 	ffi::result(result_size).map_or(None, Option::from)
 }
 
 fn set_field(field_type: i32, key: &str, val: &str) -> HostResult<()> {
 	// make the request over FFI
-	let result_size = sys::env::request_set_field(
+	let result_size = env::request_set_field(
 		field_type,
 		key.as_ptr(),
 		key.len() as i32,

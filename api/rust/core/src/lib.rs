@@ -1,4 +1,4 @@
-pub use suborbital_macro::*;
+pub use suborbital_macro::Runnable;
 
 pub mod cache;
 pub mod db;
@@ -13,6 +13,5 @@ pub mod req;
 pub mod resp;
 pub mod runnable;
 pub mod sys;
-pub mod util;
-pub(crate) use runnable::current_ident;
 pub use sys::env;
+pub mod util;

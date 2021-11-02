@@ -1,4 +1,4 @@
-use crate::sys;
+use crate::env;
 
 pub fn debug(msg: &str) {
 	log_at_level(msg, 4)
@@ -17,5 +17,5 @@ pub fn error(msg: &str) {
 }
 
 fn log_at_level(msg: &str, level: i32) {
-	sys::env::log_msg(msg.as_ptr(), msg.len() as i32, level)
+	env::log_msg(msg.as_ptr(), msg.len() as i32, level)
 }

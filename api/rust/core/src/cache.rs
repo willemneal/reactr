@@ -10,7 +10,5 @@ pub fn set(key: &str, val: Vec<u8>, ttl: i32) {
 ///
 /// Then retreives the result from the host and returns it
 pub fn get(key: &str) -> HostResult<Vec<u8>> {
-	let result_size = env::cache_get(key.as_ptr(), key.len() as i32);
-
-	ffi::result(result_size)
+	ffi::result(env::cache_get(key.as_ptr(), key.len() as i32))
 }
